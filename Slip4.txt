@@ -1,0 +1,76 @@
+Q.1) Write a C program to find whether a given files passed through command line 
+arguments are present in current directory or not.
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+int main(int argc, char *argv[]) {
+ if (argc < 2) {
+ printf("Usage: %s <file1> <file2> ... <fileN>\n", argv[0]);
+ return 1;
+ }
+ for (int i = 1; i < argc; i++) {
+ if (access(argv[i], F_OK) != -1) {
+ printf("%s exists in the current directory.\n", argv[i]);
+ } else {
+ printf("%s does not exist in the current directory.\n", argv[i]);
+ }
+ }
+ return 0;
+}
+
+
+
+
+
+Q.2) Write a C program which creates a child process and child process catches a signal 
+SIGHUP, SIGINT and SIGQUIT. The Parent process send a SIGHUP or SIGINT signal after 
+every 3 seconds, at the end of 15 second parent send SIGQUIT signal to child and child 
+terminates by displaying message "My Papa has Killed me!!!”.
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+int kill_child = 0;
+void child_handler(int signum) {
+ if (signum == SIGHUP) {
+ printf("Child received SIGHUP from parent.\n");
+ } else if (signum == SIGINT) {
+ printf("Child received SIGINT from parent.\n");
+ } else if (signum == SIGQUIT) {
+ printf("My Papa has Killed me!!!\n");
+ exit(EXIT_SUCCESS);
+ }
+}
+int main() {
+ pid_t pid = fork();
+ if (pid < 0) {
+ perror("Fork failed");
+ exit(EXIT_FAILURE);
+ } else if (pid == 0) { // Child process
+ signal(SIGHUP, child_handler);
+ signal(SIGINT, child_handler);
+ signal(SIGQUIT, child_handler);
+ while(1) {
+ // Child process continues running and handling signals
+ }
+ } else { // Parent process
+ int counter = 0;
+ while (counter < 5) { // Sending signals for 15 seconds (5 * 3 seconds)
+ sleep(3);
+ if (!kill_child) {
+ kill(pid, SIGHUP); // Send SIGHUP signal
+ } else {
+ kill(pid, SIGINT); // Send SIGINT signal
+ }
+ counter++;
+ if (counter == 5) {
+ kill(pid, SIGQUIT); // Send SIGQUIT signal after 15 seconds
+ }
+ kill_child = !kill_child;
+ }
+ wait(NULL); // Wait for child to terminate
+ }
+ return 0;
+}

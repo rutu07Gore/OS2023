@@ -1,0 +1,31 @@
+Q.1) Display all the files from current directory whose size is greater that n Bytes Where n is 
+accept from user.
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+int main() {
+ long n;
+ printf("Enter the size in bytes: ");
+ scanf("%ld", &n);
+ DIR *dir;
+ struct dirent *entry;
+ struct stat fileStat;
+ if ((dir = opendir(".")) == NULL) {
+ perror("opendir() failed");
+ return 1;
+ }
+ printf("Files with size greater than %ld bytes:\n", n);
+ while ((entry = readdir(dir)) != NULL) {
+ if (stat(entry->d_name, &fileStat) == -1) {
+ perror("stat");
+ return 1;
+ }
+ if (S_ISREG(fileStat.st_mode) && fileStat.st_size > n) {
+ printf("%s\n", entry->d_name);
+ }
+ }
+ closedir(dir);
+ return 0;
+}

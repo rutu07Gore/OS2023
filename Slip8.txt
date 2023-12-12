@@ -1,0 +1,68 @@
+Q.1) Write a C program that redirects standard output to a file output.txt. (use of dup and 
+open system call).
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+int main() {
+ int file_descriptor;
+ mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH; // File permissions
+ // Open file for writing (creating if it doesn't exist)
+ file_descriptor = open("output.txt", O_WRONLY | O_CREAT | O_TRUNC, mode);
+ if (file_descriptor < 0) {
+ perror("Error opening file");
+ return 1;
+ }
+ // Redirect standard output to the file
+ if (dup2(file_descriptor, STDOUT_FILENO) == -1) {
+ perror("Error redirecting output");
+ return 1;
+ }
+ // Close the file descriptor
+ close(file_descriptor);
+ // Printing to stdout (redirected to file)
+ printf("This output is redirected to a file using dup and open system calls.\n");
+ return 0;
+}
+
+
+
+
+
+Q.2) Implement the following unix/linux command (use fork, pipe and exec system call) 
+ls –l | wc –l
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+int main() {
+ int pipe_fd[2];
+ if (pipe(pipe_fd) == -1) {
+ perror("Pipe creation failed");
+ exit(EXIT_FAILURE);
+ }
+ pid_t pid = fork();
+ if (pid < 0) {
+ perror("Fork failed");
+ exit(EXIT_FAILURE);
+ } else if (pid == 0) { // Child process
+ close(pipe_fd[0]); // Close reading end of pipe in child
+ dup2(pipe_fd[1], STDOUT_FILENO); // Redirect stdout to pipe write end
+ // Execute ls -l command
+ execlp("ls", "ls", "-l", NULL);
+ // execlp will not return unless there's an error
+ perror("exec ls -l failed");
+ exit(EXIT_FAILURE);
+ } else { // Parent process
+ close(pipe_fd[1]); // Close writing end of pipe in parent
+ dup2(pipe_fd[0], STDIN_FILENO); // Redirect stdin to pipe read end
+ // Execute wc -l command
+ execlp("wc", "wc", "-l", NULL);
+ // execlp will not return unless there's an error
+ perror("exec wc -l failed");
+ exit(EXIT_FAILURE);
+ }
+ return 0;
+}
+

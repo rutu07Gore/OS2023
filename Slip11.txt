@@ -1,0 +1,23 @@
+Q.1) Write a C program to get and set the resource limits such as files, memory associated 
+with a process.
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+int main() {
+ struct rlimit limit;
+ // Get current resource limits for the process (for example, files limit)
+ if (getrlimit(RLIMIT_NOFILE, &limit) == -1) {
+ perror("getrlimit failed");
+ return EXIT_FAILURE;
+ }
+ printf("Current files limit: soft=%ld, hard=%ld\n", limit.rlim_cur, limit.rlim_max);
+ // Modify the resource limit (for example, increase files limit)
+ limit.rlim_cur = 1000; // Change the soft limit
+ limit.rlim_max = 1500; // Change the hard limit
+ if (setrlimit(RLIMIT_NOFILE, &limit) == -1) {
+ perror("setrlimit failed");
+ return EXIT_FAILURE;
+ }
+ printf("New files limit: soft=%ld, hard=%ld\n", limit.rlim_cur, limit.rlim_max);
+ return EXIT_SUCCESS;
+}
